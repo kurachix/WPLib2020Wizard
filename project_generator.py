@@ -142,7 +142,7 @@ class ProjectGenerator:
         return project_path
 
     @classmethod
-    def _create_from_scratch(cls, project_path: str, project_name: str, titan_id: int):
+    def _create_from_scratch(cls, project_path: str, project_name: str, titan_id: int, team_number: int = 502):
         """Cria estrutura básica se a pasta template não for encontrada."""
         subdirs = [
             ".wpilib",

@@ -161,6 +161,12 @@ class MainWindow(QMainWindow):
         h_dir.addWidget(btn_browse_dir)
         form.addRow("Diretorio de Destino:", h_dir)
 
+        self.input_team_number = QSpinBox()
+        self.input_team_number.setRange(0, 99999)
+        self.input_team_number.setValue(502)
+        self.input_team_number.setToolTip("Numero da equipe gravado no arquivo .wpilib/wpilib_preferences.json.")
+        form.addRow("Numero da Equipe (Team Number):", self.input_team_number)
+
         self.input_titan_id = QSpinBox()
         self.input_titan_id.setRange(1, 63)
         self.input_titan_id.setValue(42)
@@ -212,6 +218,7 @@ class MainWindow(QMainWindow):
         <ul>
             <li><b>Nome do Projeto:</b> Define o nome da pasta de destino e a propriedade do projeto Gradle.</li>
             <li><b>Diretorio de Destino:</b> O local no seu computador onde a nova pasta do projeto sera criada.</li>
+            <li><b>Numero da Equipe (Team Number):</b> Gravado diretamente no arquivo <code>.wpilib/wpilib_preferences.json</code>. E utilizado pelo GradleRIO para identificar o robo na rede durante o deploy (IP mDNS <i>roborio-TEAM-frc.local</i> ou <i>10.TE.AM.2</i>).</li>
             <li><b>Titan Quad CAN ID (Padrao 42):</b> O identificador numerico unico da placa controladora de motores no barramento CAN.</li>
             <li><b>Vendors Incluidos:</b> Copia Studica.json, WPILibNewCommands.json e navx_frc.json para que todas as bibliotecas de hardware compilem imediatamente.</li>
         </ul>
@@ -236,6 +243,7 @@ class MainWindow(QMainWindow):
         params = {
             "project_name": self.input_proj_name.text().strip(),
             "target_dir": self.input_proj_dir.text().strip(),
+            "team_number": self.input_team_number.value(),
             "titan_id": self.input_titan_id.value(),
             "vendors": vendors
         }
