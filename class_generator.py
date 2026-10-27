@@ -10,6 +10,198 @@ class ClassGenerator:
     """Gera arquivos Java de Subsystems, Commands e Constantes a partir de presets."""
 
     @staticmethod
+    def generate_universal_subsystem(params: Dict[str, Any]) -> Tuple[str, str]:
+        """
+        Preset 1: Gerador Universal de Subsistema.
+        Permite customizar N motores (1 a 4), N encoders (0 a 4), N fins de curso (0 a 4) e N servos (0 a 4).
+        Retorna: (codigo_subsystem_java, codigo_constantes_java)
+        """
+        class_name = params.get("class_name", "MecanismoUniversal")
+        motors = params.get("motors", [{"name": "motorPrincipal", "port": 0, "inverted": False}])
+        encoders = params.get("encoders", [])
+        limit_switches = params.get("limit_switches", [])
+        servos = params.get("servos", [])
+
+        # ==================== CONSTANTES ====================
+        const_lines = [f"    // Constantes do Subsistema Universal ({class_name})", f"    public static final class {class_name}Constants {{"]
+        
+        # Constantes de Motores
+        for i, m in enumerate(motors):
+            m_name = m.get("name", f"motor{i}").upper()
+            port = m.get("port", i)
+            inv = "true" if m.get("inverted", False) else "false"
+            const_lines.append(f"        public static final int {m_name}_PORT = {port};")
+            const_lines.append(f"        public static final boolean {m_name}_INVERTED = {inv};")
+
+        # Constantes de Encoders
+        for i, enc in enumerate(encoders):
+            enc_name = enc.get("name", f"encoder{i}").upper()
+            ch = enc.get("channel", i)
+            ppr = enc.get("ppr", 1440.0)
+            const_lines.append(f"        public static final int {enc_name}_CHANNEL = {ch};")
+            const_lines.append(f"        public static final double {enc_name}_PPR = {ppr};")
+
+        # Constantes de Fim de Curso
+        for i, ls in enumerate(limit_switches):
+            ls_name = ls.get("name", f"fimDeCurso{i}").upper()
+            ch = ls.get("channel", i)
+            const_lines.append(f"        public static final int {ls_name}_CHANNEL = {ch};")
+
+        # Constantes de Servos
+        for i, s in enumerate(servos):
+            s_name = s.get("name", f"servo{i}").upper()
+            ch = s.get("channel", i)
+            angle = s.get("default_angle", 90.0)
+            const_lines.append(f"        public static final int {s_name}_CHANNEL = {ch};")
+            const_lines.append(f"        public static final double {s_name}_DEFAULT_ANGLE = {angle};")
+
+        const_lines.append("    }")
+        constants_code = "\n".join(const_lines)
+
+        # ==================== CÓDIGO JAVA ====================
+        imports = [
+            "package frc.robot.subsystems;",
+            "",
+            "import edu.wpi.first.wpilibj2.command.SubsystemBase;",
+            "import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;",
+            "import com.studica.frc.Titan;",
+            f"import frc.robot.Constants.{class_name}Constants;"
+        ]
+        if limit_switches:
+            imports.append("import edu.wpi.first.wpilibj.DigitalInput;")
+
+        fields = ["    private final Titan titan;"]
+        init_lines = ["        this.titan = titan;"]
+        periodic_lines = []
+
+        # Motores
+        for i, m in enumerate(motors):
+            var_name = m.get("name", f"motor{i}")
+            m_const = var_name.upper()
+            fields.append(f"    private final Titan.Motor {var_name};")
+            init_lines.append(f"        this.{var_name} = titan.getMotor({class_name}Constants.{m_const}_PORT);")
+            init_lines.append(f"        this.{var_name}.setInverted({class_name}Constants.{m_const}_INVERTED);")
+            periodic_lines.append(f'        SmartDashboard.putNumber("{class_name} {var_name} RPM", {var_name}.getRPM());')
+
+        # Encoders
+        for i, enc in enumerate(encoders):
+            var_name = enc.get("name", f"encoder{i}")
+            enc_const = var_name.upper()
+            fields.append(f"    private final Titan.Encoder {var_name};")
+            init_lines.append(f"        this.{var_name} = titan.getEncoder({class_name}Constants.{enc_const}_CHANNEL, 1.0);")
+            periodic_lines.append(f'        SmartDashboard.putNumber("{class_name} {var_name} Speed", {var_name}.getSpeed());')
+
+        # Limit Switches
+        for i, ls in enumerate(limit_switches):
+            var_name = ls.get("name", f"limitSwitch{i}")
+            ls_const = var_name.upper()
+            fields.append(f"    private final DigitalInput {var_name};")
+            init_lines.append(f"        this.{var_name} = new DigitalInput({class_name}Constants.{ls_const}_CHANNEL);")
+            periodic_lines.append(f'        SmartDashboard.putBoolean("{class_name} {var_name} Ativo", {var_name}.get());')
+
+        # Servos
+        for i, s in enumerate(servos):
+            var_name = s.get("name", f"servo{i}")
+            s_const = var_name.upper()
+            fields.append(f"    private final Titan.Servo {var_name};")
+            init_lines.append(f"        this.{var_name} = titan.getServo({class_name}Constants.{s_const}_CHANNEL);")
+            init_lines.append(f"        this.{var_name}.setAngle({class_name}Constants.{s_const}_DEFAULT_ANGLE);")
+
+        fields_block = "\n".join(fields)
+        init_block = "\n".join(init_lines)
+        periodic_block = "\n".join(periodic_lines) if periodic_lines else "        // Telemetria"
+
+        # Métodos de controle
+        methods = []
+
+        # Métodos para cada motor individual
+        for m in motors:
+            v_name = m.get("name", "motor")
+            cap_name = v_name[:1].upper() + v_name[1:]
+            methods.append(f"""    /**
+     * Define velocidade do {v_name} (-1.0 a 1.0)
+     */
+    public void set{cap_name}(double speed) {{
+        {v_name}.set(speed);
+    }}""")
+
+        # Método de acionamento geral e parada
+        stop_motor_lines = "\n".join([f"        {m.get('name')}.stopMotor();" for m in motors])
+        set_all_lines = "\n".join([f"        {m.get('name')}.set(speed);" for m in motors])
+
+        methods.append(f"""    /**
+     * Define a mesma velocidade para todos os motores
+     */
+    public void setAllMotors(double speed) {{
+{set_all_lines}
+    }}
+
+    /**
+     * Para todos os motores do subsistema
+     */
+    public void stop() {{
+{stop_motor_lines}
+    }}""")
+
+        # Métodos para cada encoder
+        for enc in encoders:
+            v_name = enc.get("name", "encoder")
+            cap_name = v_name[:1].upper() + v_name[1:]
+            methods.append(f"""    public double get{cap_name}Speed() {{
+        return {v_name}.getSpeed();
+    }}
+
+    public int get{cap_name}Raw() {{
+        return {v_name}.getRaw();
+    }}""")
+
+        # Métodos para cada limit switch
+        for ls in limit_switches:
+            v_name = ls.get("name", "limitSwitch")
+            cap_name = v_name[:1].upper() + v_name[1:]
+            methods.append(f"""    public boolean is{cap_name}Triggered() {{
+        return {v_name}.get();
+    }}""")
+
+        # Métodos para cada servo
+        for s in servos:
+            v_name = s.get("name", "servo")
+            cap_name = v_name[:1].upper() + v_name[1:]
+            methods.append(f"""    public void set{cap_name}Angle(double degrees) {{
+        {v_name}.setAngle(degrees);
+    }}
+
+    public double get{cap_name}Angle() {{
+        return {v_name}.getAngle();
+    }}""")
+
+        methods_block = "\n\n".join(methods)
+
+        java_code = f"""{chr(10).join(imports)}
+
+/**
+ * Subsistema Universal Gerado Automaticamente.
+ * Contem {len(motors)} motor(es), {len(encoders)} encoder(s), {len(limit_switches)} sensor(es) fim de curso e {len(servos)} servo(s).
+ */
+public class {class_name} extends SubsystemBase {{
+
+{fields_block}
+
+    public {class_name}(Titan titan) {{
+{init_block}
+    }}
+
+    @Override
+    public void periodic() {{
+{periodic_block}
+    }}
+
+{methods_block}
+}}
+"""
+        return java_code, constants_code
+
+    @staticmethod
     def generate_omni3_drivetrain(params: Dict[str, Any]) -> Tuple[str, str]:
         """
         Preset: Tração Holonômica Omni de 3 Rodas (Kiwi Drive a 120 graus).

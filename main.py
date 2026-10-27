@@ -282,6 +282,7 @@ class MainWindow(QMainWindow):
         top_h.addWidget(QLabel("Selecione o Preset:"))
         self.combo_preset = QComboBox()
         self.combo_preset.addItems([
+            "Gerador Universal (N Motores, Encoders, Sensores e Servos)",
             "Tracao Omni 3 Rodas (Kiwi Drive - Studica VMX)",
             "Tracao Diferencial / Tanque (2 Motores)",
             "Garra / Manipulador (Motor + Encoder)",
@@ -321,6 +322,9 @@ class MainWindow(QMainWindow):
 
         <h3>Explicacao detalhada de cada Preset disponivel:</h3>
         <ul>
+            <li><b>Gerador Universal (N Motores, Encoders, Sensores e Servos):</b>
+                <p><b>A solucao definitiva sob medida:</b> voce escolhe exatamente quantos motores o robo possui (1, 2, 3 ou 4), o nome de cada motor, a porta no Titan (M0 a M3) e se o sentido deve ser invertido. Tambem permite adicionar de 0 a 4 encoders, de 0 a 4 sensores digitais de fim de curso e de 0 a 4 servomotores. O codigo e gerado com metodos de acionamento individual, conjunto, telemetria completa no SmartDashboard e botao de seguranca <code>stop()</code>.</p>
+            </li>
             <li><b>Tracao Omni 3 Rodas (Kiwi Drive - Holonomica):</b>
                 <p>E a configuracao classica da modalidade WorldSkills Autonomous Mobile Robotics. Tres rodas omnidirecionais montadas a 120 graus entre si permitem que o robo se desloque para qualquer direcao no plano (frente, tras, esquerda, direita) simultaneamente com rotacao.</p>
                 <ul>
@@ -354,10 +358,176 @@ class MainWindow(QMainWindow):
         while self.preset_form.rowCount() > 0:
             self.preset_form.removeRow(0)
 
+    def update_universal_motor_visibility(self, count):
+        for i, w in enumerate(self.u_motor_widgets):
+            w.setVisible(i < count)
+
+    def update_universal_encoder_visibility(self, count):
+        for i, w in enumerate(self.u_encoder_widgets):
+            w.setVisible(i < count)
+
+    def update_universal_limit_visibility(self, count):
+        for i, w in enumerate(self.u_limit_widgets):
+            w.setVisible(i < count)
+
+    def update_universal_servo_visibility(self, count):
+        for i, w in enumerate(self.u_servo_widgets):
+            w.setVisible(i < count)
+
     def build_preset_form(self, index):
         self.clear_preset_form()
 
-        if index == 0:  # Omni 3 Rodas
+        if index == 0:  # Gerador Universal
+            self.u_class_name = QLineEdit("MecanismoUniversal")
+            self.u_class_name.setToolTip("Nome da classe Java do subsistema.")
+            self.preset_form.addRow("Nome da Classe Subsystem:", self.u_class_name)
+
+            # --- MOTORES ---
+            self.u_motor_count = QSpinBox()
+            self.u_motor_count.setRange(1, 4)
+            self.u_motor_count.setValue(2)
+            self.u_motor_count.setToolTip("Quantos motores Titan serao instanciados no subsistema.")
+            self.preset_form.addRow("Quantidade de Motores (1 a 4):", self.u_motor_count)
+
+            self.u_motor_widgets = []
+            self.u_motors_data = []
+            default_motor_names = ["motorPrincipal", "motorSecundario", "motorExtra1", "motorExtra2"]
+            for i in range(4):
+                m_widget = QWidget()
+                m_layout = QHBoxLayout(m_widget)
+                m_layout.setContentsMargins(0, 2, 0, 2)
+
+                name_input = QLineEdit(default_motor_names[i])
+                name_input.setPlaceholderText(f"Nome do Motor {i+1}")
+
+                port_spin = QSpinBox()
+                port_spin.setRange(0, 3)
+                port_spin.setValue(i)
+                port_spin.setPrefix("Canal M")
+
+                inv_chk = QCheckBox("Inverter")
+                inv_chk.setChecked(False)
+
+                m_layout.addWidget(QLabel(f"Motor {i+1}:"))
+                m_layout.addWidget(name_input, 2)
+                m_layout.addWidget(port_spin, 1)
+                m_layout.addWidget(inv_chk, 1)
+
+                self.preset_form.addRow(m_widget)
+                self.u_motor_widgets.append(m_widget)
+                self.u_motors_data.append((name_input, port_spin, inv_chk))
+                m_widget.setVisible(i < self.u_motor_count.value())
+
+            self.u_motor_count.valueChanged.connect(self.update_universal_motor_visibility)
+
+            # --- ENCODERS ---
+            self.u_encoder_count = QSpinBox()
+            self.u_encoder_count.setRange(0, 4)
+            self.u_encoder_count.setValue(1)
+            self.u_encoder_count.setToolTip("Quantos encoders opticos serao lidos pelo Titan.")
+            self.preset_form.addRow("Quantidade de Encoders (0 a 4):", self.u_encoder_count)
+
+            self.u_encoder_widgets = []
+            self.u_encoders_data = []
+            default_enc_names = ["encoder1", "encoder2", "encoder3", "encoder4"]
+            for i in range(4):
+                e_widget = QWidget()
+                e_layout = QHBoxLayout(e_widget)
+                e_layout.setContentsMargins(0, 2, 0, 2)
+
+                e_name = QLineEdit(default_enc_names[i])
+                e_ch = QSpinBox()
+                e_ch.setRange(0, 3)
+                e_ch.setValue(i)
+                e_ch.setPrefix("Canal ")
+
+                e_ppr = QDoubleSpinBox()
+                e_ppr.setRange(1.0, 10000.0)
+                e_ppr.setValue(1440.0)
+                e_ppr.setSuffix(" PPR")
+
+                e_layout.addWidget(QLabel(f"Encoder {i+1}:"))
+                e_layout.addWidget(e_name, 2)
+                e_layout.addWidget(e_ch, 1)
+                e_layout.addWidget(e_ppr, 1)
+
+                self.preset_form.addRow(e_widget)
+                self.u_encoder_widgets.append(e_widget)
+                self.u_encoders_data.append((e_name, e_ch, e_ppr))
+                e_widget.setVisible(i < self.u_encoder_count.value())
+
+            self.u_encoder_count.valueChanged.connect(self.update_universal_encoder_visibility)
+
+            # --- FIM DE CURSO (DIGITALINPUT) ---
+            self.u_limit_count = QSpinBox()
+            self.u_limit_count.setRange(0, 4)
+            self.u_limit_count.setValue(0)
+            self.u_limit_count.setToolTip("Quantos sensores fim de curso digitais (DigitalInput) serao conectados.")
+            self.preset_form.addRow("Sensores Fim de Curso (0 a 4):", self.u_limit_count)
+
+            self.u_limit_widgets = []
+            self.u_limits_data = []
+            default_limit_names = ["limiteInferior", "limiteSuperior", "sensorFim3", "sensorFim4"]
+            for i in range(4):
+                l_widget = QWidget()
+                l_layout = QHBoxLayout(l_widget)
+                l_layout.setContentsMargins(0, 2, 0, 2)
+
+                l_name = QLineEdit(default_limit_names[i])
+                l_ch = QSpinBox()
+                l_ch.setRange(0, 7)
+                l_ch.setValue(i)
+                l_ch.setPrefix("DIO ")
+
+                l_layout.addWidget(QLabel(f"Sensor {i+1}:"))
+                l_layout.addWidget(l_name, 2)
+                l_layout.addWidget(l_ch, 1)
+
+                self.preset_form.addRow(l_widget)
+                self.u_limit_widgets.append(l_widget)
+                self.u_limits_data.append((l_name, l_ch))
+                l_widget.setVisible(i < self.u_limit_count.value())
+
+            self.u_limit_count.valueChanged.connect(self.update_universal_limit_visibility)
+
+            # --- SERVOS ---
+            self.u_servo_count = QSpinBox()
+            self.u_servo_count.setRange(0, 4)
+            self.u_servo_count.setValue(0)
+            self.preset_form.addRow("Servos Motores (0 a 4):", self.u_servo_count)
+
+            self.u_servo_widgets = []
+            self.u_servos_data = []
+            default_servo_names = ["servoGarra", "servoCamera", "servoExtra3", "servoExtra4"]
+            for i in range(4):
+                s_widget = QWidget()
+                s_layout = QHBoxLayout(s_widget)
+                s_layout.setContentsMargins(0, 2, 0, 2)
+
+                s_name = QLineEdit(default_servo_names[i])
+                s_ch = QSpinBox()
+                s_ch.setRange(0, 7)
+                s_ch.setValue(i)
+                s_ch.setPrefix("PWM ")
+
+                s_angle = QDoubleSpinBox()
+                s_angle.setRange(0.0, 180.0)
+                s_angle.setValue(90.0)
+                s_angle.setSuffix(" °")
+
+                s_layout.addWidget(QLabel(f"Servo {i+1}:"))
+                s_layout.addWidget(s_name, 2)
+                s_layout.addWidget(s_ch, 1)
+                s_layout.addWidget(s_angle, 1)
+
+                self.preset_form.addRow(s_widget)
+                self.u_servo_widgets.append(s_widget)
+                self.u_servos_data.append((s_name, s_ch, s_angle))
+                s_widget.setVisible(i < self.u_servo_count.value())
+
+            self.u_servo_count.valueChanged.connect(self.update_universal_servo_visibility)
+
+        elif index == 1:  # Omni 3 Rodas
             self.f_class_name = QLineEdit("DriveTrain")
             self.f_class_name.setToolTip("Nome do arquivo Java e da classe do subsistema.")
             self.preset_form.addRow("Nome da Classe Subsystem:", self.f_class_name)
@@ -397,7 +567,7 @@ class MainWindow(QMainWindow):
             self.f_gear_ratio.setToolTip("Relacao de reducao mecânica da caixa de transmissao. Sempre em formato de ponto flutuante.")
             self.preset_form.addRow("Relacao de Reducao (Gear Ratio):", self.f_gear_ratio)
 
-        elif index == 1:  # Tracao Tanque
+        elif index == 2:  # Tracao Tanque
             self.f_class_name = QLineEdit("DriveTrain")
             self.preset_form.addRow("Nome da Classe Subsystem:", self.f_class_name)
 
@@ -424,7 +594,7 @@ class MainWindow(QMainWindow):
             self.f_ppr.setValue(1440.0)
             self.preset_form.addRow("Pulsos por Revolucao (PPR):", self.f_ppr)
 
-        elif index == 2:  # Garra
+        elif index == 3:  # Garra
             self.f_class_name = QLineEdit("GarraSubsystem")
             self.preset_form.addRow("Nome da Classe Subsystem:", self.f_class_name)
 
@@ -457,7 +627,7 @@ class MainWindow(QMainWindow):
             self.f_threshold.setValue(100.0)
             self.preset_form.addRow("Threshold de RPM (isAtSpeed):", self.f_threshold)
 
-        elif index == 3:  # Servo
+        elif index == 4:  # Servo
             self.f_class_name = QLineEdit("ServoSubsystem")
             self.preset_form.addRow("Nome da Classe Subsystem:", self.f_class_name)
 
@@ -472,7 +642,7 @@ class MainWindow(QMainWindow):
             self.f_servo_angle.setSuffix(" °")
             self.preset_form.addRow("Angulo Inicial Padrao:", self.f_servo_angle)
 
-        elif index == 4:  # Comando
+        elif index == 5:  # Comando
             self.f_command_name = QLineEdit("AtivarMecanismo")
             self.preset_form.addRow("Nome da Classe Command:", self.f_command_name)
 
@@ -491,7 +661,56 @@ class MainWindow(QMainWindow):
 
     def generate_current_preset(self):
         index = self.combo_preset.currentIndex()
-        if index == 0:  # Omni 3
+        if index == 0:  # Gerador Universal
+            motors = []
+            for i in range(self.u_motor_count.value()):
+                name_w, port_w, inv_w = self.u_motors_data[i]
+                motors.append({
+                    "name": name_w.text().strip() or f"motor{i+1}",
+                    "port": port_w.value(),
+                    "inverted": inv_w.isChecked()
+                })
+
+            encoders = []
+            for i in range(self.u_encoder_count.value()):
+                name_w, ch_w, ppr_w = self.u_encoders_data[i]
+                encoders.append({
+                    "name": name_w.text().strip() or f"encoder{i+1}",
+                    "channel": ch_w.value(),
+                    "ppr": ppr_w.value()
+                })
+
+            limit_switches = []
+            for i in range(self.u_limit_count.value()):
+                name_w, ch_w = self.u_limits_data[i]
+                limit_switches.append({
+                    "name": name_w.text().strip() or f"fimDeCurso{i+1}",
+                    "channel": ch_w.value()
+                })
+
+            servos = []
+            for i in range(self.u_servo_count.value()):
+                name_w, ch_w, angle_w = self.u_servos_data[i]
+                servos.append({
+                    "name": name_w.text().strip() or f"servo{i+1}",
+                    "channel": ch_w.value(),
+                    "default_angle": angle_w.value()
+                })
+
+            params = {
+                "class_name": self.u_class_name.text().strip() or "MecanismoUniversal",
+                "motors": motors,
+                "encoders": encoders,
+                "limit_switches": limit_switches,
+                "servos": servos
+            }
+            code_java, code_const = ClassGenerator.generate_universal_subsystem(params)
+            self.current_class_name = params["class_name"]
+            self.current_subsystem_code = code_java
+            self.current_constants_code = code_const
+            return code_java, code_const, "subsystems"
+
+        elif index == 1:  # Omni 3
             params = {
                 "class_name": self.f_class_name.text().strip(),
                 "motor_right": self.f_m_right.value(),
@@ -507,7 +726,7 @@ class MainWindow(QMainWindow):
             self.current_constants_code = code_const
             return code_java, code_const, "subsystems"
 
-        elif index == 1:  # Diferencial
+        elif index == 2:  # Diferencial
             params = {
                 "class_name": self.f_class_name.text().strip(),
                 "motor_left": self.f_m_left.value(),
@@ -522,7 +741,7 @@ class MainWindow(QMainWindow):
             self.current_constants_code = code_const
             return code_java, code_const, "subsystems"
 
-        elif index == 2:  # Garra
+        elif index == 3:  # Garra
             params = {
                 "class_name": self.f_class_name.text().strip(),
                 "motor_id": self.f_motor_id.value(),
@@ -538,7 +757,7 @@ class MainWindow(QMainWindow):
             self.current_constants_code = code_const
             return code_java, code_const, "subsystems"
 
-        elif index == 3:  # Servo
+        elif index == 4:  # Servo
             params = {
                 "class_name": self.f_class_name.text().strip(),
                 "servo_channel": self.f_servo_ch.value(),
@@ -550,7 +769,7 @@ class MainWindow(QMainWindow):
             self.current_constants_code = code_const
             return code_java, code_const, "subsystems"
 
-        elif index == 4:  # Comando
+        elif index == 5:  # Comando
             params = {
                 "command_name": self.f_command_name.text().strip(),
                 "subsystem_class": self.f_target_subsystem.text().strip(),
@@ -788,8 +1007,6 @@ class MainWindow(QMainWindow):
         QMainWindow, QWidget {
             background-color: #1e1e2e;
             color: #cdd6f4;
-            font-family: 'Segoe UI', sans-serif;
-            font-size: 13px;
         }
         QGroupBox {
             border: 1px solid #45475a;
@@ -867,6 +1084,7 @@ class MainWindow(QMainWindow):
 
 def main():
     app = QApplication(sys.argv)
+    app.setFont(QFont("Segoe UI", 10))
     window = MainWindow()
     window.show()
     sys.exit(app.exec())

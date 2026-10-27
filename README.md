@@ -24,6 +24,7 @@ python main.py
 
 ### 2. Gerador de Classes com Presets
 Gera classes com **todos os parametros personalizaveis** pelo usuario antes da escrita do codigo:
+- **Gerador Universal (N Motores, Encoders, Sensores e Servos)**: Escolha quantos motores o robo tem (1 a 4), definindo para cada um o nome da variavel, canal no Titan (M0 a M3) e inversao. Tambem permite adicionar de 0 a 4 encoders, 0 a 4 fins de curso digitais (DigitalInput) e 0 a 4 servomotores, com geracao de metodos de controle individual, conjunto, telemetria no SmartDashboard e botao de seguranca `stop()`.
 - **Tracao Omni 3 Rodas (Kiwi Holonomico)**: Portas de motores (Right, Back, Left), raio da roda em mm, PPR do encoder, relacao de reducao (`1.0 / 61.0`) e cinematica holonomica.
 - **Tracao Diferencial / Tanque (2 Motores)**: Portas de motores, inversao de lado, raio da roda e controle arcade/tank drive.
 - **Garra / Manipulador**: Motor Titan, encoder opcional, velocidade padrao, threshold de RPM e telemetria no `SmartDashboard`.
