@@ -2,10 +2,10 @@
 
 
 a = Analysis(
-    ['C:/Users/WorldSkills/Downloads/lab1Introducao/python/main.py'],
+    ['C:/Users/WorldSkills/Documents/Repositorio/WPLib2020Wizard/main.py'],
     pathex=[],
     binaries=[],
-    datas=[('C:/Users/WorldSkills/Downloads/lab1Introducao/python/vendors', 'vendors')],
+    datas=[('C:/Users/WorldSkills/Documents/Repositorio/WPLib2020Wizard/vendors', 'vendors')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
