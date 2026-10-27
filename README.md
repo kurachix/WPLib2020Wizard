@@ -1,10 +1,10 @@
-# 🤖 WPILib 2020 Robot Wizard & Class Generator
+# WPILib 2020 Robot Wizard & Class Generator
 
-Ferramenta visual desenvolvida para acelerar a criação de projetos WPILib 2020 para o ecossistema **Studica VMX-pi / Titan Quad** (WorldSkills Mobile Robotics & FRC).
+Ferramenta visual desenvolvida para acelerar a criacao de projetos WPILib 2020 para o ecossistema **Studica VMX-pi / Titan Quad** (WorldSkills Mobile Robotics & FRC).
 
 ---
 
-## 🚀 Como Executar
+## Como Executar
 
 Abra o terminal na pasta `python/` e execute:
 
@@ -14,39 +14,42 @@ python main.py
 
 ---
 
-## 🛠️ Funcionalidades Principais
+## Funcionalidades Principais
 
-### 1. 📁 Criador de Novo Projeto (Scaffolding)
+### 1. Criador de Novo Projeto (Scaffolding)
 - Gera a estrutura de pastas oficial do WPILib 2020 (`build.gradle`, `.wpilib/`, `src/main/java/frc/robot/`).
-- Copia automaticamente as dependências de fornecedor (`Studica.json`, `WPILibNewCommands.json`, `navx_frc.json`) da pasta `vendors/`.
+- Copia automaticamente as dependencias de fornecedor (`Studica.json`, `WPILibNewCommands.json`, `navx_frc.json`) da pasta `vendors/`.
 - Configura o GradleRIO `2020.3.2.30` com target `vmxpi` para Raspberry Pi.
+- Inclui botao de informacoes detalhadas com explicacao passo a passo do processo.
 
-### 2. ⚙️ Gerador de Classes com Presets
-Gera classes com **todos os parâmetros personalizáveis** pelo usuário antes da escrita do código:
-- **Tração Omni 3 Rodas (Kiwi Holonômico)**: Portas de motores (Right, Back, Left), raio da roda em mm, PPR do encoder, relação de redução (`1.0 / 61.0`) e cinemática holonômica.
-- **Tração Diferencial / Tanque (2 Motores)**: Portas de motores, inversão de lado, raio da roda e controle arcade/tank drive.
-- **Garra / Manipulador**: Motor Titan, encoder opcional, velocidade padrão, threshold de RPM e telemetria no `SmartDashboard`.
-- **Atuador Servo**: Canal do servo no Titan e ângulo inicial.
-- **Comando Personalizado (`CommandBase`)**: Temporizado ou contínuo com ciclo de vida WPILib (`initialize`, `execute`, `end`, `isFinished`).
+### 2. Gerador de Classes com Presets
+Gera classes com **todos os parametros personalizaveis** pelo usuario antes da escrita do codigo:
+- **Tracao Omni 3 Rodas (Kiwi Holonomico)**: Portas de motores (Right, Back, Left), raio da roda em mm, PPR do encoder, relacao de reducao (`1.0 / 61.0`) e cinematica holonomica.
+- **Tracao Diferencial / Tanque (2 Motores)**: Portas de motores, inversao de lado, raio da roda e controle arcade/tank drive.
+- **Garra / Manipulador**: Motor Titan, encoder opcional, velocidade padrao, threshold de RPM e telemetria no `SmartDashboard`.
+- **Atuador Servo**: Canal do servo no Titan e angulo inicial.
+- **Comando Personalizado (`CommandBase`)**: Temporizado ou continuo com ciclo de vida WPILib (`initialize`, `execute`, `end`, `isFinished`).
+- Inclui botao de explicacao sobre o funcionamento de cada preset e calculos matematicos.
 
-### 3. 🔗 Acoplamento Automático (Injeção de Dependências)
-Não gera apenas o arquivo solto. Conecta automaticamente o subsistema ao projeto:
+### 3. Acoplamento Automatico (Injecao de Dependencias)
+Nao gera apenas o arquivo solto. Conecta automaticamente o subsistema ao projeto:
 - Injeta as constantes em `Constants.java`.
 - Declara o atributo privado em `RobotContainer.java`.
-- Instancia o subsistema no construtor `RobotContainer()` passando `titan`.
-- Vincula ações a botões do controle Xbox (`whenHeld`, `whenPressed`).
+- Instancia o subsistema no construtor `RobotContainer()` passando a instancia de `titan`.
+- Vincula acoes a botoes do controle Xbox (`whenHeld`, `whenPressed`).
+- Inclui botao de ajuda explicando o padrao Command-Based e injecao de dependencias.
 
-### 4. 📄 Pré-Visualizador de Código
-Permite inspecionar o código Java e os blocos de constantes antes de gravar no disco.
+### 4. Pre-Visualizador de Codigo
+Permite inspecionar o codigo Java e os blocos de constantes antes de gravar no disco.
 
 ---
 
-## 📂 Arquivos do Repositório
+## Arquivos do Repositorio
 
-- **[main.py](file:///c:/Users/WorldSkills/Downloads/lab1Introducao/python/main.py)**: Interface Desktop moderna em PySide6 (Dark Mode).
-- **[class_generator.py](file:///c:/Users/WorldSkills/Downloads/lab1Introducao/python/class_generator.py)**: Motor de geração de código Java e presets.
-- **[coupler.py](file:///c:/Users/WorldSkills/Downloads/lab1Introducao/python/coupler.py)**: Sistema de injeção e acoplamento em `RobotContainer.java` e `Constants.java`.
+- **[main.py](file:///c:/Users/WorldSkills/Downloads/lab1Introducao/python/main.py)**: Interface Desktop moderna em PySide6 (Dark Mode) com botoes de informacao em cada etapa.
+- **[class_generator.py](file:///c:/Users/WorldSkills/Downloads/lab1Introducao/python/class_generator.py)**: Motor de geracao de codigo Java e presets.
+- **[coupler.py](file:///c:/Users/WorldSkills/Downloads/lab1Introducao/python/coupler.py)**: Sistema de injecao e acoplamento em `RobotContainer.java` e `Constants.java`.
 - **[project_generator.py](file:///c:/Users/WorldSkills/Downloads/lab1Introducao/python/project_generator.py)**: Gerador da estrutura de novo projeto WPILib.
-- **[PLANO_DE_ACAO.md](file:///c:/Users/WorldSkills/Downloads/lab1Introducao/python/PLANO_DE_ACAO.md)**: Plano estratégico e roadmap da ferramenta.
-- **[PROMPTS_DESENVOLVIMENTO.md](file:///c:/Users/WorldSkills/Downloads/lab1Introducao/python/PROMPTS_DESENVOLVIMENTO.md)**: Prompts modulares prontos para expandir a solução.
-- **[vendors/](file:///c:/Users/WorldSkills/Downloads/lab1Introducao/python/vendors)**: Arquivos JSON de dependências (Studica, NavX, Commands).
+- **[PLANO_DE_ACAO.md](file:///c:/Users/WorldSkills/Downloads/lab1Introducao/python/PLANO_DE_ACAO.md)**: Plano estrategico e roadmap da ferramenta.
+- **[PROMPTS_DESENVOLVIMENTO.md](file:///c:/Users/WorldSkills/Downloads/lab1Introducao/python/PROMPTS_DESENVOLVIMENTO.md)**: Prompts modulares prontos para expandir a solucao.
+- **[vendors/](file:///c:/Users/WorldSkills/Downloads/lab1Introducao/python/vendors)**: Arquivos JSON de dependencias (Studica, NavX, Commands).
