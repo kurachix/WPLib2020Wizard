@@ -197,30 +197,23 @@ class MainWindow(QMainWindow):
         subtitle = "Entenda como a estrutura do projeto WPILib 2020 e configurada para o VMX-pi / Studica"
         html = """
         <h3>O que esta etapa realiza?</h3>
-        <p>Esta etapa gera automaticamente toda a arvore de arquivos e diretorios oficial exigida pelo framework <b>WPILib 2020</b>, personalizada para a placa controladora <b>Studica VMX-pi</b> (Raspberry Pi com Linux Raspbian).</p>
+        <p>Esta etapa clona a pasta base <b>template</b> oficial do WPILib 2020 e <b>adapta automaticamente todos os arquivos</b> para o novo nome escolhido pelo usuario.</p>
         
-        <h3>Explicacao detalhada dos campos:</h3>
+        <h3>Como a pasta template e adaptada:</h3>
         <ul>
-            <li><b>Nome do Projeto:</b> Define o nome da pasta de destino e a propriedade <code>rootProject.name</code> no arquivo <code>settings.gradle</code>.</li>
-            <li><b>Diretorio de Destino:</b> O local no seu computador onde o projeto sera criado. Ao terminar, basta abrir esta pasta no VS Code.</li>
-            <li><b>Titan Quad CAN ID (Padrao 42):</b> O Titan Quad e um controlador de motores de 4 canais que se comunica com o VMX-pi atraves da rede CAN (Controller Area Network). Cada dispositivo na rede CAN precisa de um identificador numerico unico. O valor de fabrica oficial e <b>42</b>.</li>
-            <li><b>Dependencias de Fornecedores (Vendordeps):</b>
-                <ul>
-                    <li><b>Studica.json:</b> Importa as bibliotecas C++ e Java que implementam a classe <code>com.studica.frc.Titan</code>, permitindo acionar motores (M0 a M3), ler encoders e controlar servos.</li>
-                    <li><b>WPILibNewCommands.json:</b> Habilita a arquitetura Command-Based moderna (classes <code>SubsystemBase</code>, <code>CommandBase</code>, <code>RunCommand</code>).</li>
-                    <li><b>navx_frc.json:</b> Permite utilizar o giroscopio NavX para controle angular e odometria de alta precisao.</li>
-                </ul>
-            </li>
+            <li><b>Copia Limpa:</b> Todos os arquivos essenciais de configuracao (.vscode, gradlew, gradle wrapper, src/) sao copiados, ignorando automaticamente pastas temporarias de build (como .gradle, build e bin).</li>
+            <li><b>Adaptacao do .project:</b> O nome do projeto dentro do arquivo <code>.project</code> e substituido de <i>template</i> para o novo nome informado.</li>
+            <li><b>Adaptacao do settings.gradle:</b> A definicao <code>rootProject.name = "NovoNome"</code> e atualizada.</li>
+            <li><b>Injecao do Titan CAN ID:</b> O arquivo <code>Constants.java</code> recebe a constante <code>TITAN_ID</code> configurada.</li>
+            <li><b>Vendordeps Atualizados:</b> Os arquivos JSON selecionados da pasta <i>vendors/</i> sao transferidos para a pasta <code>vendordeps/</code> do novo projeto.</li>
         </ul>
 
-        <h3>Arquivos gerados automaticamente:</h3>
+        <h3>Explicacao dos campos:</h3>
         <ul>
-            <li><code>build.gradle</code>: Configurado com o plugin <i>GradleRIO 2020.3.2.30</i>, Java 11 e o target de deploy <code>vmxpi("roborio")</code>.</li>
-            <li><code>vendordeps/</code>: Pasta contendo os arquivos JSON necessarios para que o Gradle faca o download automatico dos binarios compilados.</li>
-            <li><code>src/main/java/frc/robot/Main.java</code>: Ponto de entrada que inicializa a maquina virtual do robo.</li>
-            <li><code>src/main/java/frc/robot/Robot.java</code>: Gerencia os modos de execucao (Autonomo, Teleoperado, Desabilitado) e executa o escalonador de comandos <code>CommandScheduler</code>.</li>
-            <li><code>src/main/java/frc/robot/RobotContainer.java</code>: O centro do robo, onde os motores, controles e comandos sao interligados.</li>
-            <li><code>src/main/java/frc/robot/Constants.java</code>: Centraliza todas as portas, pinagens e calibracoes numericas do robo.</li>
+            <li><b>Nome do Projeto:</b> Define o nome da pasta de destino e a propriedade do projeto Gradle.</li>
+            <li><b>Diretorio de Destino:</b> O local no seu computador onde a nova pasta do projeto sera criada.</li>
+            <li><b>Titan Quad CAN ID (Padrao 42):</b> O identificador numerico unico da placa controladora de motores no barramento CAN.</li>
+            <li><b>Vendors Incluidos:</b> Copia Studica.json, WPILibNewCommands.json e navx_frc.json para que todas as bibliotecas de hardware compilem imediatamente.</li>
         </ul>
         """
         dlg = InfoDialog(title, subtitle, html, self)
