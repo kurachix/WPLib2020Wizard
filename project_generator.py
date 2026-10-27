@@ -4,10 +4,25 @@ Copia e adapta os arquivos da pasta 'template' para o novo projeto fornecido pel
 """
 
 import os
+import sys
 import shutil
 import re
 import json
 from typing import Dict, Any, List
+
+
+def get_base_dir() -> str:
+    """Retorna o diretorio base de recursos (suporta PyInstaller)."""
+    if getattr(sys, "frozen", False):
+        return getattr(sys, "_MEIPASS", os.path.dirname(sys.executable))
+    return os.path.dirname(os.path.abspath(__file__))
+
+
+def get_exe_dir() -> str:
+    """Retorna o diretorio onde o executavel/script esta salvo."""
+    if getattr(sys, "frozen", False):
+        return os.path.dirname(sys.executable)
+    return os.path.dirname(os.path.abspath(__file__))
 
 
 class ProjectGenerator:
@@ -17,20 +32,23 @@ class ProjectGenerator:
 
     @classmethod
     def find_template_dir(cls) -> str:
-        """Localiza a pasta template no workspace."""
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        parent_dir = os.path.abspath(os.path.join(current_dir, ".."))
+        """Localiza a pasta template no workspace ou ao lado do executavel."""
+        base_dir = get_base_dir()
+        exe_dir = get_exe_dir()
 
-        # Possíveis caminhos da pasta template
         candidates = [
-            os.path.join(parent_dir, "template"),
-            os.path.join(current_dir, "template"),
-            os.path.join(parent_dir, "lab1Introducao")
+            os.path.join(exe_dir, "template"),
+            os.path.join(exe_dir, "..", "template"),
+            os.path.join(base_dir, "template"),
+            os.path.join(base_dir, "..", "template"),
+            os.path.join(exe_dir, "lab1Introducao"),
+            os.path.join(exe_dir, "..", "lab1Introducao")
         ]
 
         for cand in candidates:
-            if os.path.isdir(cand) and os.path.exists(os.path.join(cand, "build.gradle")):
-                return cand
+            cand_abs = os.path.abspath(cand)
+            if os.path.isdir(cand_abs) and os.path.exists(os.path.join(cand_abs, "build.gradle")):
+                return cand_abs
 
         return ""
 
@@ -129,10 +147,19 @@ class ProjectGenerator:
         os.makedirs(os.path.join(project_path, "src", "main", "java", "frc", "robot", "subsystems"), exist_ok=True)
         os.makedirs(os.path.join(project_path, "vendordeps"), exist_ok=True)
 
-        # 6. Copiar Vendors da pasta /python/vendors para vendordeps
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        vendors_source_dir = os.path.join(script_dir, "vendors")
-        if os.path.exists(vendors_source_dir):
+        # 6. Copiar Vendors para vendordeps
+        vendors_dirs = [
+            os.path.join(get_base_dir(), "vendors"),
+            os.path.join(get_exe_dir(), "vendors"),
+            os.path.join(get_exe_dir(), "python", "vendors")
+        ]
+        vendors_source_dir = ""
+        for v_dir in vendors_dirs:
+            if os.path.exists(v_dir) and os.path.isdir(v_dir):
+                vendors_source_dir = v_dir
+                break
+
+        if vendors_source_dir:
             for vendor_file in selected_vendors:
                 src_file = os.path.join(vendors_source_dir, vendor_file)
                 dst_file = os.path.join(project_path, "vendordeps", vendor_file)
