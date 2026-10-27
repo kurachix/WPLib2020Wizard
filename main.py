@@ -302,10 +302,14 @@ class MainWindow(QMainWindow):
         btn_h = QHBoxLayout()
         btn_preview = QPushButton("Pre-visualizar Codigo")
         btn_preview.clicked.connect(self.action_preview_preset_code)
-        btn_save = QPushButton("Salvar Classe no Projeto")
+        btn_save = QPushButton("Salvar Apenas Classe")
         btn_save.clicked.connect(self.action_save_preset_code)
+        btn_gen_couple = QPushButton("Gerar Subsystem e Acoplar no RobotContainer")
+        btn_gen_couple.setStyleSheet("background-color: #89b4fa; color: #11111b; font-weight: bold; padding: 8px 16px;")
+        btn_gen_couple.clicked.connect(self.action_generate_and_couple)
         btn_h.addWidget(btn_preview)
         btn_h.addWidget(btn_save)
+        btn_h.addWidget(btn_gen_couple)
         layout.addLayout(btn_h)
 
         self.build_preset_form(0)
@@ -818,7 +822,7 @@ class MainWindow(QMainWindow):
         )
 
     # ==========================================
-    # ABA 3: ACOPLAMENTO AUTOMÁTICO
+    # ABA 3: ACOPLAMENTO AUTOMÁTICO INTEGRADO
     # ==========================================
     def create_tab_coupler(self):
         tab = QWidget()
@@ -826,7 +830,7 @@ class MainWindow(QMainWindow):
 
         # Barra Superior com Titulo e Botao de Informacoes
         top_bar = QHBoxLayout()
-        lbl_section = QLabel("Acoplamento e Injecao de Dependencias no RobotContainer")
+        lbl_section = QLabel("Central de Geracao e Acoplamento no RobotContainer")
         lbl_section.setFont(QFont("Segoe UI", 11, QFont.Bold))
         top_bar.addWidget(lbl_section)
         top_bar.addStretch()
@@ -837,8 +841,8 @@ class MainWindow(QMainWindow):
         top_bar.addWidget(btn_info)
         layout.addLayout(top_bar)
 
-        box = QGroupBox("Projeto WPILib Ativo")
-        form = QFormLayout(box)
+        box_proj = QGroupBox("Projeto WPILib Ativo")
+        form_proj = QFormLayout(box_proj)
 
         default_base = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "lab1Introducao"))
         h_proj = QHBoxLayout()
@@ -847,23 +851,54 @@ class MainWindow(QMainWindow):
         btn_browse.clicked.connect(self.browse_couple_proj)
         h_proj.addWidget(self.input_couple_proj_path)
         h_proj.addWidget(btn_browse)
-        form.addRow("Pasta Raiz do Projeto:", h_proj)
-        layout.addWidget(box)
+        form_proj.addRow("Pasta Raiz do Projeto:", h_proj)
+        layout.addWidget(box_proj)
 
-        box_couple = QGroupBox("Conectar Subsistema ao RobotContainer")
+        box_source = QGroupBox("Origem do Subsistema e Presets")
+        form_source = QFormLayout(box_source)
+
+        self.combo_coupler_mode = QComboBox()
+        self.combo_coupler_mode.addItems([
+            "Gerar Novo Subsystem com Preset e Acoplar Automaticamente",
+            "Acoplar Classe Manualmente Criada no Projeto"
+        ])
+        self.combo_coupler_mode.currentIndexChanged.connect(self.on_coupler_mode_changed)
+        form_source.addRow("Modo de Operacao:", self.combo_coupler_mode)
+
+        # Seletor de Preset no Acoplamento
+        self.combo_coupler_preset = QComboBox()
+        self.combo_coupler_preset.addItems([
+            "Gerador Universal (N Motores, Encoders, Sensores e Servos)",
+            "Tracao Omni 3 Rodas (Kiwi Drive - Studica VMX)",
+            "Tracao Diferencial / Tanque (2 Motores)",
+            "Garra / Manipulador (Motor + Encoder)",
+            "Atuador Servo Motor (Studica Titan)",
+            "Comando Personalizado (CommandBase)"
+        ])
+        self.combo_coupler_preset.currentIndexChanged.connect(self.on_coupler_preset_changed)
+        form_source.addRow("Selecione o Preset:", self.combo_coupler_preset)
+
+        btn_edit_preset = QPushButton("Configurar Detalhes Finos na Aba Gerador")
+        btn_edit_preset.setStyleSheet("background-color: #313244; color: #89b4fa;")
+        btn_edit_preset.clicked.connect(self.goto_generator_tab)
+        form_source.addRow("", btn_edit_preset)
+
+        layout.addWidget(box_source)
+
+        box_couple = QGroupBox("Configuracao do Acoplamento no RobotContainer")
         form_couple = QFormLayout(box_couple)
 
-        self.input_subsystem_class = QLineEdit("GarraSubsystem")
-        self.input_subsystem_class.setToolTip("Nome exato da classe Java do subsistema que sera instanciado.")
+        self.input_subsystem_class = QLineEdit("MecanismoUniversal")
+        self.input_subsystem_class.setToolTip("Nome da classe Java do subsistema.")
         form_couple.addRow("Classe do Subsistema:", self.input_subsystem_class)
 
-        self.input_subsystem_var = QLineEdit("m_garra")
-        self.input_subsystem_var.setToolTip("Nome da variavel privada no RobotContainer (ex: m_garra, m_driveTrain).")
+        self.input_subsystem_var = QLineEdit("m_mecanismo")
+        self.input_subsystem_var.setToolTip("Nome da variavel privada no RobotContainer (ex: m_mecanismo, m_driveTrain, m_garra).")
         form_couple.addRow("Nome da Variavel no Container:", self.input_subsystem_var)
 
         self.combo_xbox_btn = QComboBox()
         self.combo_xbox_btn.addItems([
-            "Nenhum (Apenas instanciar sem vincular botoes)",
+            "Nenhum (Apenas instanciar com Titan sem vincular botoes)",
             "XboxController.Button.kBumperLeft (Enquanto segurar: whenHeld)",
             "XboxController.Button.kBumperRight (Enquanto segurar: whenHeld)",
             "XboxController.Button.kA (Ao pressionar: whenPressed)",
@@ -875,33 +910,150 @@ class MainWindow(QMainWindow):
 
         layout.addWidget(box_couple)
 
-        btn_inject = QPushButton("Acoplar e Injetar no RobotContainer.java")
-        btn_inject.setFixedHeight(45)
-        btn_inject.setFont(QFont("Segoe UI", 11, QFont.Bold))
-        btn_inject.clicked.connect(self.action_inject_coupler)
-        layout.addWidget(btn_inject)
+        self.btn_execute_couple = QPushButton("Gerar Subsystem e Acoplar Automaticamente no RobotContainer")
+        self.btn_execute_couple.setFixedHeight(48)
+        self.btn_execute_couple.setFont(QFont("Segoe UI", 11, QFont.Bold))
+        self.btn_execute_couple.setStyleSheet("background-color: #89b4fa; color: #11111b; font-weight: bold;")
+        self.btn_execute_couple.clicked.connect(self.action_execute_coupler_tab)
+        layout.addWidget(self.btn_execute_couple)
 
         layout.addStretch()
         self.tabs.addTab(tab, "Acoplamento Automatico")
 
+    def on_coupler_mode_changed(self, index):
+        is_preset = (index == 0)
+        self.combo_coupler_preset.setEnabled(is_preset)
+        if is_preset:
+            self.btn_execute_couple.setText("Gerar Subsystem e Acoplar Automaticamente no RobotContainer")
+        else:
+            self.btn_execute_couple.setText("Acoplar Classe Manualmente no RobotContainer.java")
+
+    def on_coupler_preset_changed(self, index):
+        self.combo_preset.setCurrentIndex(index)
+        preset_names = [
+            ("MecanismoUniversal", "m_mecanismo"),
+            ("DriveTrain", "m_driveSubsystem"),
+            ("DriveTrain", "m_driveSubsystem"),
+            ("GarraSubsystem", "m_garraSubsystem"),
+            ("ServoSubsystem", "m_servoSubsystem"),
+            ("AtivarMecanismo", "m_comando")
+        ]
+        if index < len(preset_names):
+            c_name, v_name = preset_names[index]
+            self.input_subsystem_class.setText(c_name)
+            self.input_subsystem_var.setText(v_name)
+
+    def goto_generator_tab(self):
+        self.tabs.setCurrentIndex(1)
+
+    def action_execute_coupler_tab(self):
+        if self.combo_coupler_mode.currentIndex() == 0:
+            self.action_generate_and_couple()
+        else:
+            self.action_inject_coupler()
+
+    def action_generate_and_couple(self):
+        """Gera o subsistema Java, injeta as constantes em Constants.java e acopla no RobotContainer em um so clique."""
+        code_java, code_const, kind = self.generate_current_preset()
+        if not code_java:
+            QMessageBox.warning(self, "Aviso", "Nenhum codigo Java foi gerado para este preset.")
+            return
+
+        proj_dir = self.input_couple_proj_path.text().strip()
+        if not os.path.exists(proj_dir):
+            QMessageBox.warning(
+                self, "Projeto Nao Encontrado",
+                "Informe o caminho valido da pasta raiz de um projeto WPILib ativo."
+            )
+            return
+
+        # 1. Grava o arquivo do Subsistema
+        subsystem_folder = os.path.join(proj_dir, "src", "main", "java", "frc", "robot", kind)
+        os.makedirs(subsystem_folder, exist_ok=True)
+        class_name = self.current_class_name or self.input_subsystem_class.text().strip() or "Mecanismo"
+        target_file = os.path.join(subsystem_folder, f"{class_name}.java")
+        with open(target_file, "w", encoding="utf-8") as f:
+            f.write(code_java)
+
+        # 2. Injeta constantes em Constants.java
+        if code_const:
+            const_file = os.path.join(proj_dir, "src", "main", "java", "frc", "robot", "Constants.java")
+            ProjectCoupler.inject_constants(const_file, code_const)
+
+        # 3. Acopla no RobotContainer.java
+        container_path = os.path.join(proj_dir, "src", "main", "java", "frc", "robot", "RobotContainer.java")
+        if not os.path.exists(container_path):
+            QMessageBox.warning(
+                self, "Aviso de Acoplamento",
+                f"O arquivo {target_file} foi gravado com sucesso, mas RobotContainer.java nao foi localizado em:\n{container_path}"
+            )
+            return
+
+        var_name = self.input_subsystem_var.text().strip()
+        if not var_name:
+            var_name = f"m_{class_name[:1].lower() + class_name[1:]}"
+
+        btn_idx = self.combo_xbox_btn.currentIndex()
+        button_code = None
+        if btn_idx > 0:
+            btn_selected = self.combo_xbox_btn.currentText().split()[0]
+            action_method = "whenHeld" if "whenHeld" in self.combo_xbox_btn.currentText() else "whenPressed"
+
+            if "Universal" in class_name:
+                action_call = f"{var_name}.setAllMotors(0.8)"
+            elif "Drive" in class_name:
+                action_call = f"{var_name}.driveHolonomic(0.5, 0.0, 0.0)"
+            elif "Garra" in class_name:
+                action_call = f"{var_name}.activate()"
+            elif "Servo" in class_name:
+                action_call = f"{var_name}.setAngle(90.0)"
+            else:
+                action_call = f"{var_name}.stop()"
+
+            button_code = f"new JoystickButton(joystick, {btn_selected}.value).{action_method}(new RunCommand(() -> {action_call}, {var_name}));"
+
+        success = ProjectCoupler.inject_subsystem_to_container(
+            container_path,
+            class_name,
+            var_name,
+            constructor_call=f"new {class_name}(titan)",
+            button_binding_code=button_code
+        )
+
+        if success:
+            btn_info_text = f"\n   - Botao vinculado: {self.combo_xbox_btn.currentText().split()[0]}" if button_code else "\n   - Sem vinculacao de botao"
+            QMessageBox.information(
+                self, "Subsystem Gerado e Acoplado com Sucesso",
+                f"Processo completo executado com sucesso!\n\n"
+                f"1. Arquivo Java gravado:\n   {target_file}\n\n"
+                f"2. Constantes injetadas em:\n   Constants.java\n\n"
+                f"3. Acoplamento no RobotContainer.java:\n"
+                f"   - Importacao de frc.robot.{kind}.{class_name}\n"
+                f"   - Atributo: private final {class_name} {var_name};\n"
+                f"   - Instanciacao: {var_name} = new {class_name}(titan);"
+                f"{btn_info_text}"
+            )
+        else:
+            QMessageBox.critical(self, "Falha no Acoplamento", "Nao foi possivel atualizar o arquivo RobotContainer.java.")
+
     def show_info_coupler(self):
         title = "Informacoes: Acoplamento e Injecao de Dependencias"
-        subtitle = "Como o software automatiza a conexao entre o hardware e o RobotContainer"
+        subtitle = "Como o software automatiza a geracao do subsistema e a conexao ao RobotContainer"
         html = """
-        <h3>O que e Acoplamento e Injecao no RobotContainer?</h3>
-        <p>No modelo WPILib Command-Based, criar o arquivo do subsistema nao e suficiente para faze-lo funcionar. Para que o robo reconheca o subsistema e os comandos sejam executados, o subsistema precisa ser <b>declarado, instanciado com a placa Titan e vinculado aos botoes do controle</b> dentro da classe central <code>RobotContainer.java</code>.</p>
+        <h3>O que esta Central de Acoplamento realiza?</h3>
+        <p>Esta tela unifica a <b>geracao do subsistema</b> e a <b>injecao automatica no RobotContainer.java</b> em uma unica acao. Ela permite escolher entre os presets prontos (inclusive o <b>Gerador Universal</b>) ou acoplar uma classe ja existente.</p>
 
-        <h3>O que este recurso executa automaticamente no seu codigo Java:</h3>
+        <h3>O que acontece em 1 unico clique:</h3>
         <ol>
-            <li><b>Importacao da Classe:</b> Adiciona <code>import frc.robot.subsystems.&lt;NomeClasse&gt;;</code> no topo do arquivo se ainda nao estiver presente.</li>
-            <li><b>Declaracao do Atributo:</b> Cria a variavel privada no corpo da classe:
-                <br><code>private final &lt;NomeClasse&gt; &lt;nomeVariavel&gt;;</code>
-            </li>
-            <li><b>Instanciacao no Construtor com Injecao do Titan:</b> No construtor <code>RobotContainer()</code>, o objeto e instanciado recebendo a referencia compartilhada da placa Titan:
-                <br><code>&lt;nomeVariavel&gt; = new &lt;NomeClasse&gt;(titan);</code>
-            </li>
-            <li><b>Mapeamento de Botoes do Controle Xbox:</b> Se um botao for selecionado (ex: <i>Bumper Esquerdo</i>), o injetor adiciona a chamada dentro do metodo <code>configureButtonBindings()</code>:
-                <br><code>new JoystickButton(joystick, XboxController.Button.kBumperLeft.value).whenHeld(new RunCommand(() -&gt; m_garra.activate(), m_garra));</code>
+            <li><b>Gravacao do Arquivo Java:</b> Cria a classe do subsistema (ex: <code>MecanismoUniversal.java</code> ou <code>GarraSubsystem.java</code>) com toda a logica dos motores e encoders.</li>
+            <li><b>Injecao de Constantes:</b> Insere as portas dos motores, canais dos encoders e calibracoes no arquivo <code>Constants.java</code>.</li>
+            <li><b>Injecao no RobotContainer:</b>
+                <ul>
+                    <li>Adiciona a linha de <code>import</code> correspondente.</li>
+                    <li>Declara o atributo privado <code>private final NomeSubsystem m_nome;</code></li>
+                    <li>Instancia o subsistema passando o <code>titan</code> no construtor.</li>
+                    <li>Se um botao do controle Xbox for selecionado, adiciona a chamada vinculada no metodo <code>configureButtonBindings()</code>.</li>
+                </ul>
             </li>
         </ol>
 
@@ -909,7 +1061,7 @@ class MainWindow(QMainWindow):
         <ul>
             <li>Elimina o erro classico de <code>NullPointerException</code> decorrente de subsistemas declarados mas nao instanciados.</li>
             <li>Elimina a necessidade de abrir multiplos arquivos e digitar repetidamente o mesmo codigo estrutural.</li>
-            <li>Mantem a arquitetura limpa e desacoplada, seguindo as melhores praticas recomendadas pela FIRST e pela WorldSkills.</li>
+            <li>Acelera o desenvolvimento em treinos e simulados de competicao.</li>
         </ul>
         """
         dlg = InfoDialog(title, subtitle, html, self)
