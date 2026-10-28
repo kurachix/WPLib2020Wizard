@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.spec.bak
+
+# Ambientes virtuais
+venv/
+.venv/
+env/
+
+# Build do PyInstaller
+build/
+*.toc
+*.pkg
+
+# Arquivos de IDE / SO
+.idea/
+.vscode/*
+!.vscode/settings.json
+Thumbs.db

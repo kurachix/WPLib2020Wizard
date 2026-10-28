@@ -1,12 +1,24 @@
 # -*- mode: python ; coding: utf-8 -*-
+import os
 
+spec_dir = os.path.dirname(os.path.abspath(SPEC))
 
 a = Analysis(
-    ['C:/Users/WorldSkills/Documents/Repositorio/WPLib2020Wizard/main.py'],
-    pathex=[],
+    [os.path.join(spec_dir, 'main.py')],
+    pathex=[spec_dir],
     binaries=[],
-    datas=[('C:/Users/WorldSkills/Documents/Repositorio/WPLib2020Wizard/vendors', 'vendors')],
-    hiddenimports=[],
+    datas=[
+        (os.path.join(spec_dir, 'vendors'), 'vendors'),
+        (os.path.join(spec_dir, 'template'), 'template'),
+    ],
+    hiddenimports=[
+        'PySide6.QtCore',
+        'PySide6.QtGui',
+        'PySide6.QtWidgets',
+        'class_generator',
+        'project_generator',
+        'coupler',
+    ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -42,3 +54,4 @@ coll = COLLECT(
     upx_exclude=[],
     name='WPILib2020Wizard',
 )
+

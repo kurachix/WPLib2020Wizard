@@ -21,11 +21,19 @@ Este software automatiza todo esse fluxo por meio de uma interface grafica moder
 ## 2. Estrutura do Repositorio
 
 ```
-lab1Introducao/
+WPLib2020Wizard/
 │
 ├── build_exe.bat              # Script em lote para compilacao facil em .exe
+├── build.py                   # Script de automacao PyInstaller
 ├── requirements.txt           # Dependencias Python do projeto
 ├── README.md                  # Documentacao principal
+│
+├── main.py                    # Interface grafica desktop (PySide6)
+├── class_generator.py         # Motor de geracao de codigo Java (Universal + Presets)
+├── project_generator.py       # Gerenciador de criacao e clonagem de projetos
+├── coupler.py                 # Injetor automatico de codigo em Constants e RobotContainer
+├── WPILib2020Wizard.spec      # Especificacao PyInstaller para pacote Onedir
+├── WPILib2020Wizard_Standalone.spec # Especificacao PyInstaller para executavel unico
 │
 ├── template/                  # Template base limpo do projeto WPILib 2020
 │   ├── build.gradle
@@ -40,18 +48,10 @@ lab1Introducao/
 │       ├── RobotContainer.java
 │       └── Constants.java
 │
-└── python/                    # Codigo-fonte do assistente em Python
-    ├── main.py                # Interface grafica (PySide6)
-    ├── class_generator.py     # Motor de geracao de codigo Java (Universal + Presets)
-    ├── project_generator.py   # Gerenciador de criacao e clonagem de projetos
-    ├── coupler.py             # Injetor automatico de codigo em Constants e RobotContainer
-    ├── build.py               # Script de automacao PyInstaller
-    ├── build_exe.bat          # Atalho local de compilacao
-    └── vendors/               # Bibliotecas de terceiros (Studica / VMX / WPILib)
-        ├── Studica-2020.1.1.json
-        ├── TitanQuad-2020.1.1.json
-        ├── VMX-pi-2020.1.1.json
-        └── WPILibNewCommands.json
+└── vendors/                   # Bibliotecas de terceiros (Studica / VMX / WPILib)
+    ├── Studica.json
+    ├── WPILibNewCommands.json
+    └── navx_frc.json
 ```
 
 ---
@@ -88,40 +88,52 @@ Isso instalara as bibliotecas necessarias:
 Na pasta raiz do projeto, execute:
 
 ```powershell
-python python/main.py
+python main.py
 ```
 
 ### Opcao B: Executar via Aplicativo Compilado (.exe)
-Caso o executavel ja tenha sido compilado, basta executar:
+Existem duas versoes compiladas disponiveis na pasta `dist/`:
 
+1. **Versao Pacote (Inicializacao Instantanea - Recomendada para uso local):**
 ```powershell
-python\dist\WPILib2020Wizard\WPILib2020Wizard.exe
+dist\WPILib2020Wizard\WPILib2020Wizard.exe
+```
+
+2. **Versao Standalone (Arquivo Unico Portatil - Ideal para pendrive / compartilhar):**
+```powershell
+dist\WPILib2020Wizard_Standalone.exe
 ```
 
 ---
 
 ## 6. Como Compilar para Executavel (.exe)
 
-O projeto possui rotinas automatizadas para gerar um executavel standalone do Windows sem necessidade de abrir o terminal.
+O projeto possui rotinas automatizadas para compilar todo o sistema junto com a interface grafica PySide6, a pasta `template` e a pasta `vendors`.
 
 ### Metodo 1: Script em Lote (Recomendado)
 De um duplo clique no arquivo:
 ```
 build_exe.bat
 ```
-localizado na raiz do projeto. O script chamara o compilador e gerara a pasta da aplicacao.
+localizado na raiz do projeto. O script instalara as dependencias e gerara os executaveis automaticamente.
 
 ### Metodo 2: Linha de Comando
 Execute o script de build em Python:
 ```powershell
-python python/build.py
+python build.py
 ```
 
-O executavel sera gerado no seguinte diretorio:
+Os executaveis serao gerados no seguinte diretorio:
 ```
-python/dist/WPILib2020Wizard/WPILib2020Wizard.exe
+dist/
+├── WPILib2020Wizard/
+│   ├── WPILib2020Wizard.exe
+│   ├── template/
+│   ├── vendors/
+│   └── _internal/
+└── WPILib2020Wizard_Standalone.exe
 ```
-Todas as dependencias e a pasta `vendors` sao automaticamente empacotadas junto ao executavel.
+Todas as dependencias Qt (PySide6), bibliotecas de fornecedores e o template WPILib sao 100% empacotados e autocontidos.
 
 ---
 
